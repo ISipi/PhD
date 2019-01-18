@@ -8,6 +8,13 @@ from os.path import normpath, basename
 cur_dir = os.getcwd()
 cur_dir = str(cur_dir)
 
+'''
+    pollen image basic folder structure:
+    images/*pollen_species*/*.jpg
+    where pollen_species is any given pollen species
+'''
+
+# data augmentation function
 def run_augmentor(output='output\\'):
     output = "\\" + output
 
@@ -25,19 +32,20 @@ def run_augmentor(output='output\\'):
         output_folder = cur_dir + output + base_name
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
-        p = Augmentor.Pipeline(source_directory=img_folder, output_directory=output_folder)
-        p.rotate_random_90(probability=1.0)
-        p.greyscale(probability=1.0)
+        p = Augmentor.Pipeline(source_directory=img_folder, output_directory=output_folder) # initialize a data augmentation pipeline
+        p.rotate_random_90(probability=1.0) # rotate by 90, 180, or 270 degrees
+        p.greyscale(probability=1.0) # convert the rotated image to greyscale
         #p.shear(probability=1, max_shear_left=10, max_shear_right=10)
         #p.random_color(probability=1.0, min_factor=0.2, max_factor=0.8)
-        p.random_contrast(probability=1.0, min_factor=0.3, max_factor=0.9)
-        p.histogram_equalisation(probability=1.0)
-        p.crop_centre(probability=1, percentage_area=0.65)
-        p.random_distortion(probability=1.0, grid_height=10, grid_width=10, magnitude=3)
-        p.resize(probability=1.0, width=224, height=224)
-        p.sample(1000)
+        p.random_contrast(probability=1.0, min_factor=0.3, max_factor=0.9) # random contrast between a factor 0.3 and 0.9, where 0 is a solid grey image, 1 is the original
+        p.histogram_equalisation(probability=1.0) # equalize the image histograms
+        p.crop_centre(probability=1, percentage_area=0.65) # crop the images to the centre of the grains to exclude grain shape and only analyze texture
+        p.random_distortion(probability=1.0, grid_height=10, grid_width=10, magnitude=3) # do random elastic distortion on the cropped images
+        p.resize(probability=1.0, width=224, height=224) # resize the images to 224*224 size
+        p.sample(1000) # create 1000 images based on the above rules
 
 
+# check the image filetype and convert to .jpg if an invalid filetype is found
 def check_output_filetype(output='output\\'):
     for folder in os.listdir(os.path.join(cur_dir, output)):
         output_path = os.path.join(cur_dir, output)
@@ -50,6 +58,7 @@ def check_output_filetype(output='output\\'):
                 return cv2.imwrite(os.path.join(folder, img), image)
 
 
+# rename all images in the data augmentation output folder
 def rename_output_images(output='output\\'):
     output_img_folder = os.path.join(cur_dir, output)
     output_folder_list = []
@@ -72,6 +81,7 @@ def rename_output_images(output='output\\'):
             num += 1
 
 
+# select four images and all of the transformations and move to a training folder
 def make_test_set(output='output\\'):
     output_img_folder = os.path.join(cur_dir, output)
     output_folder_list = []
@@ -96,9 +106,10 @@ def make_test_set(output='output\\'):
             else:
                 continue
 
-output_folder_name = 'output\\'
 
-run_augmentor(output_folder_name)
-check_output_filetype(output_folder_name)
-rename_output_images(output_folder_name)
-#make_test_set(output_folder_name)
+output_folder_name = 'output\\' # which folder to send augmented images
+
+run_augmentor(output_folder_name) # run augmentation
+check_output_filetype(output_folder_name) # check filetype
+rename_output_images(output_folder_name) # rename the images
+#make_test_set(output_folder_name) - not currently in use
